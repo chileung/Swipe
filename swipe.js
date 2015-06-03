@@ -3,7 +3,8 @@
  *
  * Chileung
  *
- * Inspired By Brad Birdsall
+ * Inspired By Brad Birdsall's Swipe 2
+ * Github: https://github.com/thebird/Swipe
  *
  * Copyright 2015, MIT License
  *
@@ -30,7 +31,7 @@ function Swipe(container, options) {
   // 滑动对象个数
   var length;
 
-  // timer的引用
+  // timer 的引用
   var interval;
 
   // 设置一些用于触屏事件的对象
@@ -55,10 +56,8 @@ function Swipe(container, options) {
   // 滑动单位（根据方向来决定滑动单位）
   var unit;
 
-  // 是否开启循环
-  options.continuous = options.continuous !== undefined ? options.continuous : true;
-  // temp
-  options.continuous = false;
+  // 是否开启循环（默认关闭）
+  options.continuous = options.continuous !== undefined ? options.continuous : false;
 
   // 设置自动开始的延迟毫秒数
   var delay = options.auto || 0;
@@ -143,13 +142,6 @@ function Swipe(container, options) {
         // stop slideshow
         stop();
 
-        // increase resistance if first or last slide
-        // if (options.continuous) { // we don't add resistance at the end
-        // translate(circle(index - 1), delta.x + slidePos[circle(index - 1)], 0);
-        // translate(index, delta.x + slidePos[index], 0);
-        // translate(circle(index + 1), delta.x + slidePos[circle(index + 1)], 0);
-        // } else {
-
         // 计算阻碍级别
         if (direction === 'horizontal') {
           // 当当前滑动对象是第一个对象且向左滑动；或是最后一个对象且向右滑动，需要计算阻碍力，否则没有阻碍力
@@ -169,7 +161,6 @@ function Swipe(container, options) {
         translate(index - 1, dist + slidePos[index - 1], 0);
         translate(index, dist + slidePos[index], 0);
         translate(index + 1, dist + slidePos[index + 1], 0);
-        // }
       }
     },
     end: function () {
@@ -198,13 +189,10 @@ function Swipe(container, options) {
         isPastBounds = !index && delta.x > 0 || index === slides.length - 1 && delta.x < 0;
       }
 
-      // if (options.continuous) isPastBounds = false;
-
       if (isValidScrolling) {
         if (isValidSlide && !isPastBounds) {
           // 如果是有效的滑动，并且不是经过首尾对象
-          // determine direction of swipe (true:right, false:left)
-          // 判断当前滑动操作的方向
+          // 判断当前滑动操作的方向(true:right, false:left)
           var dir;
           if (direction === 'vertical') {
             dir = delta.y < 0;
@@ -213,24 +201,12 @@ function Swipe(container, options) {
           }
 
           if (dir) {
-            // if (options.continuous) { // we need to get the next in this direction in place
-            // move(circle(index - 1), -width, 0);
-            // move(circle(index + 2), width, 0);
-            // } else {
             move(index - 1, -unit, 0);
-            // }
-
             move(index, slidePos[index] - unit, speed);
             move(circle(index + 1), slidePos[circle(index + 1)] - unit, speed);
             index = circle(index + 1);
           } else {
-            // if (options.continuous) { // we need to get the next in this direction in place
-            // move(circle(index + 1), width, 0);
-            // move(circle(index - 2), -width, 0);
-            // } else {
             move(index + 1, unit, 0);
-            // }
-
             move(index, slidePos[index] + unit, speed);
             move(circle(index - 1), slidePos[circle(index - 1)] + unit, speed);
             index = circle(index - 1);
@@ -239,18 +215,11 @@ function Swipe(container, options) {
           /* jshint expr: true */
           options.callback && options.callback(index, slides[index]);
         } else {
-          // if (options.continuous) {
-          // move(circle(index - 1), -width, speed);
-          // move(index, 0, speed);
-          // move(circle(index + 1), width, speed);
-          // } else {
-
           // 如果不是有效的滑动，或者当前滑动动作尝试跨越首尾对象
           // 则将 index 返回显示位置，并重置其左右的滑动对象
           move(index - 1, -unit, speed);
           move(index, 0, speed);
           move(index + 1, unit, speed);
-          // }
         }
       }
 
@@ -292,40 +261,32 @@ function Swipe(container, options) {
       setup();
     },
     slide: function (to, speed) {
-      // cancel slideshow
       stop();
-
       slide(to, speed);
     },
     prev: function () {
-      // cancel slideshow
       stop();
-
       prev();
     },
     next: function () {
-      // cancel slideshow
       stop();
-
       next();
     },
     stop: function () {
-      // cancel slideshow
       stop();
     },
     getPos: function () {
-      // return current index position
+      // 返回当前指向的索引
       return index;
     },
     getNumSlides: function () {
-      // return total number of slides
+      // 返回滑动对象的总数
       return length;
     },
     kill: function () {
-      // cancel slideshow
       stop();
 
-      // reset slides
+      // 重置所有滑动对象
       var pos = slides.length;
       while (pos--) {
         var slide = slides[pos];
@@ -335,7 +296,7 @@ function Swipe(container, options) {
         translate(pos, 0, 0);
       }
 
-      // remove current event listeners
+      // 移除已注册的事件处理函数
       element.removeEventListener('touchstart', events, false);
       element.removeEventListener('webkitTransitionEnd', events, false);
       element.removeEventListener('msTransitionEnd', events, false);
@@ -351,16 +312,6 @@ function Swipe(container, options) {
     // 获取所有滑动对象并缓存
     slides = element.children;
     length = slides.length;
-
-    // 若只有一个滑动对象，则设循环为 false
-    // if (slides.length < 2) options.continuous = false;
-
-    // 对于只有两个滑动对象的特殊情况，作特殊处理
-    // if (options.continuous && slides.length < 3) {
-    // element.appendChild(slides[0].cloneNode(true));
-    // element.appendChild(element.children[1].cloneNode(true));
-    // slides = element.children;
-    // }
 
     // 创建一个数组，用于保存每个滑动对象的当前位置
     slidePos = new Array(slides.length);
@@ -384,12 +335,6 @@ function Swipe(container, options) {
       // 比当前索引小的，移到左（上）边，比当前索引大的，移到右（下）边
       move(pos, index > pos ? -unit : (index < pos ? unit : 0), 0);
     }
-
-    // reposition elements before and after index
-    // if (options.continuous) {
-    // move(circle(index - 1), -width, 0);
-    // move(circle(index + 1), width, 0);
-    // }
 
     container.style.visibility = 'visible';
   }
@@ -422,15 +367,6 @@ function Swipe(container, options) {
     // 计算滑动方向
     var dir = Math.abs(index - to) / (index - to); // 1: backward, -1: forward
 
-    // get the actual position of the slide
-    // if (options.continuous) {
-    //   var natural_direction = direction;
-    //   direction = -slidePos[circle(to)] / width;
-    //   // if going forward but to < index, use to = slides.length + to
-    //   // if going backward but to > index, use to = -slides.length + to
-    //   if (direction !== natural_direction) to = -direction * slides.length + to;
-    // }
-
     var diff = Math.abs(index - to) - 1;
 
     // 将所有在 index 和 to 之间的滑动对象都往计算出来的方向滑动
@@ -442,8 +378,6 @@ function Swipe(container, options) {
     move(index, dir * unit, slideSpeed || speed);
     // 将 to 按指定速度，往计算出来的方向滑动到当前显示范围
     move(to, 0, slideSpeed || speed);
-
-    // if (options.continuous) move(circle(to - direction), -(width * direction), 0); // we need to get the next in place
 
     // 更新 index
     index = to;
@@ -505,7 +439,7 @@ function Swipe(container, options) {
   }
 }
 
-// 适配 JQ
+// 适配 JQ 或 Zepto
 if (window.jQuery || window.Zepto) {
   (function ($) {
     $.fn.Swipe = function (params) {
