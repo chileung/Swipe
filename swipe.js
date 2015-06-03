@@ -414,3 +414,10 @@ if (window.jQuery || window.Zepto) {
     };
   })(window.jQuery || window.Zepto);
 }
+
+// 支持 CommonJS 和 AMD
+if (typeof module !== 'undefined' && typeof exports === 'object') {
+  module.exports = Swipe;
+} else if (typeof define === 'function' && define.amd) {
+  define([], Swipe);
+}
