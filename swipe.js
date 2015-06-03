@@ -19,27 +19,17 @@ function Swipe(container, options) {
   var element = container.children[0];
 
   // 滑动对象数组
-  var slides;
-
   // 记录每个滑动对象位置的数组
-  var slidePos;
-
   // 滑动对象大小
-  var width;
-  var height;
-
   // 滑动对象个数
-  var length;
-
   // timer 的引用
-  var interval;
+  // 是否正在进行有效的滑动
+  // 滑动单位（根据方向来决定滑动单位）
+  var slides, slidePos, width, height, slidesLen, interval, isValidScrolling, unit;
 
   // 设置一些用于触屏事件的对象
   var start = {};
   var delta = {};
-
-  // 是否正在进行有效的滑动
-  var isValidScrolling;
 
   // 配置信息
   options = options || {};
@@ -52,9 +42,6 @@ function Swipe(container, options) {
 
   // 滑动方向（支持水平、垂直）
   var direction = options.direction || 'horizontal';
-
-  // 滑动单位（根据方向来决定滑动单位）
-  var unit;
 
   // 是否开启循环（默认关闭）
   options.continuous = options.continuous !== undefined ? options.continuous : false;
@@ -77,9 +64,6 @@ function Swipe(container, options) {
           this.end(event);
           break;
         case 'webkitTransitionEnd':
-        case 'msTransitionEnd':
-        case 'oTransitionEnd':
-        case 'otransitionend':
         case 'transitionend':
           this.transitionEnd(event);
           break;
@@ -147,12 +131,12 @@ function Swipe(container, options) {
           // 当当前滑动对象是第一个对象且向左滑动；或是最后一个对象且向右滑动，需要计算阻碍力，否则没有阻碍力
           delta.x =
             delta.x /
-            ((!index && delta.x > 0 || index === slides.length - 1 && delta.x < 0) ? (Math.abs(delta.x) / width + 1) : 1);
+            ((!index && delta.x > 0 || index === slidesLen - 1 && delta.x < 0) ? (Math.abs(delta.x) / width + 1) : 1);
         } else if (direction === 'vertical') {
           // 当当前滑动对象是第一个对象且向上滑动；或是最后一个对象且向下滑动，需要计算阻碍力，否则没有阻碍力
           delta.y =
             delta.y /
-            ((!index && delta.y > 0 || index === slides.length - 1 && delta.y < 0) ? (Math.abs(delta.y) / height + 1) : 1);
+            ((!index && delta.y > 0 || index === slidesLen - 1 && delta.y < 0) ? (Math.abs(delta.y) / height + 1) : 1);
         }
 
         var dist = direction === 'horizontal' && delta.x || direction === 'vertical' && delta.y;
@@ -184,9 +168,9 @@ function Swipe(container, options) {
       // or if last slide and slide amt is less than 0
       var isPastBounds;
       if (direction === 'vertical') {
-        isPastBounds = !index && delta.y > 0 || index === slides.length - 1 && delta.y < 0;
+        isPastBounds = !index && delta.y > 0 || index === slidesLen - 1 && delta.y < 0;
       } else if (direction === 'horizontal') {
-        isPastBounds = !index && delta.x > 0 || index === slides.length - 1 && delta.x < 0;
+        isPastBounds = !index && delta.x > 0 || index === slidesLen - 1 && delta.x < 0;
       }
 
       if (isValidScrolling) {
@@ -243,9 +227,6 @@ function Swipe(container, options) {
   // 注册事件
   element.addEventListener('touchstart', events, false);
   element.addEventListener('webkitTransitionEnd', events, false);
-  element.addEventListener('msTransitionEnd', events, false);
-  element.addEventListener('oTransitionEnd', events, false);
-  element.addEventListener('otransitionend', events, false);
   element.addEventListener('transitionend', events, false);
   window.addEventListener('resize', events, false);
 
@@ -281,13 +262,13 @@ function Swipe(container, options) {
     },
     getNumSlides: function () {
       // 返回滑动对象的总数
-      return length;
+      return slidesLen;
     },
     kill: function () {
       stop();
 
       // 重置所有滑动对象
-      var pos = slides.length;
+      var pos = slidesLen;
       while (pos--) {
         var slide = slides[pos];
         slide.style.width = '';
@@ -299,9 +280,6 @@ function Swipe(container, options) {
       // 移除已注册的事件处理函数
       element.removeEventListener('touchstart', events, false);
       element.removeEventListener('webkitTransitionEnd', events, false);
-      element.removeEventListener('msTransitionEnd', events, false);
-      element.removeEventListener('oTransitionEnd', events, false);
-      element.removeEventListener('otransitionend', events, false);
       element.removeEventListener('transitionend', events, false);
       window.removeEventListener('resize', events, false);
     }
@@ -311,10 +289,10 @@ function Swipe(container, options) {
   function setup() {
     // 获取所有滑动对象并缓存
     slides = element.children;
-    length = slides.length;
+    slidesLen = slides.length;
 
     // 创建一个数组，用于保存每个滑动对象的当前位置
-    slidePos = new Array(slides.length);
+    slidePos = new Array(slidesLen);
 
     // 计算每个滑动对象的大小
     width = container.getBoundingClientRect().width || container.offsetWidth;
@@ -324,7 +302,7 @@ function Swipe(container, options) {
     unit = direction === 'vertical' ? height : width;
 
     // 对每个滑动对象，设置其大小、唯一标识，并移动到合适的位置
-    var pos = slides.length;
+    var pos = slidesLen;
     while (pos--) {
       var slide = slides[pos];
 
@@ -342,21 +320,19 @@ function Swipe(container, options) {
   // 上一页
   function prev() {
     // 只在允许循环或当前索引不为0的时候可以返回前一页
-    if (options.continuous) slide(index - 1);
-    else if (index) slide(index - 1);
+    if (options.continuous || index) slide(index - 1);
   }
 
   // 下一页
   function next() {
     // 只在允许循环或当前索引小于最大滑动数时可以前进到下一页
-    if (options.continuous) slide(index + 1);
-    else if (index < slides.length - 1) slide(index + 1);
+    if (options.continuous || index < slidesLen - 1) slide(index + 1);
   }
 
   // 在循环中确认真实位置
   function circle(index) {
     // 返回 index 所指向的真实位置
-    return (slides.length + (index % slides.length)) % slides.length;
+    return (slidesLen + (index % slidesLen)) % slidesLen;
   }
 
   // 滑动方法（核心）
@@ -403,25 +379,13 @@ function Swipe(container, options) {
 
     if (!style) return;
 
-    style.webkitTransitionDuration =
-      style.MozTransitionDuration =
-      style.msTransitionDuration =
-      style.OTransitionDuration =
-      style.transitionDuration = speed + 'ms';
+    style.webkitTransitionDuration = style.transitionDuration = speed + 'ms';
 
     var cmd =
       direction === 'horizontal' && 'translate(' + dist + 'px, 0px)' ||
       direction === 'vertical' && 'translate(0px, ' + dist + 'px)';
 
     style.webkitTransform = cmd + 'translateZ(0)';
-
-    cmd =
-      direction === 'horizontal' && 'translateX(' ||
-      direction === 'vertical' && 'translateY(';
-
-    style.msTransform =
-      style.MozTransform =
-      style.OTransform = cmd + dist + 'px)';
   }
 
   // 启动
