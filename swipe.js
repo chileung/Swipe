@@ -2,10 +2,10 @@
  * Swipe 2.1.0
  *
  * Chileung
- * My Github: https://github.com/chileung
  *
- * Inspired By Brad Birdsall's Swipe 2
- * His Github: https://github.com/thebird/Swipe
+ * Github: https://github.com/chileung
+ *
+ * Inspired By Brad Birdsall's Swipe 2 [https://github.com/thebird/Swipe]
  *
  * Copyright 2015, MIT License
  *
